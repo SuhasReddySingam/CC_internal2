@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Notes App</title>
+</head>
+<body>
+  <h1>Simple Notes App</h1>
+
+  <form action="/add" method="POST">
+    <input type="text" name="note" placeholder="Write a note" required />
+    <button type="submit">Add</button>
+  </form>
+
+  <ul>
+    <% notes.forEach((note, index) => { %>
+      <li>
+        <%= note %>
+        <form action="/delete" method="POST" style="display:inline;">
+          <input type="hidden" name="index" value="<%= index %>"/>
+          <button type="submit">Delete</button>
+        </form>
+      </li>
+    <% }) %>
+  </ul>
+
+</body>
+</html>
