@@ -1,0 +1,58 @@
+import json
+import boto3
+from uuid import uuid4
+from botocore.exceptions import ClientError
+
+# Initialize resources outside handler (best practice for performance)
+dynamodb = boto3.resource('dynamodb')
+table_name = 'newtable'
+table = dynamodb.Table(table_name)
+
+def lambda_handler(event, context):
+    print("Received event:", json.dumps(event))
+
+    # Check if 'Records' exists
+    if 'Records' not in event:
+        print("No 'Records' key found in the event.")
+        return {
+            'statusCode': 400,
+            'body': 'Invalid event format'
+        }
+
+    for record in event['Records']:
+        try:
+            # Extract S3 details safely
+            bucket_name = record['s3']['bucket']['name']
+            object_key = record['s3']['object']['key']
+            size = record['s3']['object'].get('size', -1)
+            event_name = record.get('eventName', 'Unknown')
+            event_time = record.get('eventTime', 'Unknown')
+
+            # Prepare item
+            item = {
+                'unique': str(uuid4()),
+                'Bucket': bucket_name,
+                'Object': object_key,
+                'Size': size,
+                'Event': event_name,
+                'EventTime': event_time
+            }
+
+            # Insert into DynamoDB
+            table.put_item(Item=item)
+
+            print(f"Successfully inserted item: {item}")
+
+        except KeyError as e:
+            print(f"Missing expected key: {str(e)}")
+
+        except ClientError as e:
+            print(f"DynamoDB error: {e.response['Error']['Message']}")
+
+        except Exception as e:
+            print(f"Unexpected error: {str(e)}")
+
+    return {
+        'statusCode': 200,
+        'body': 'Processing completed'
+    }
